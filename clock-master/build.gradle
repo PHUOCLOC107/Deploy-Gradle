@@ -1,0 +1,98 @@
+plugins {
+    id 'java-library'
+    id 'war'
+    id 'maven-publish'
+    id 'org.hidetake.ssh' version '2.11.2'
+}
+
+group 'vn.edu.hcmuaf.fit'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    junitVersion = '5.11.0-M2'
+}
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+dependencies {
+    api libs.jakarta.servlet.jsp.jstl.jakarta.servlet.jsp.jstl.api
+    api libs.org.glassfish.web.jakarta.servlet.jsp.jstl
+    api libs.com.mysql.mysql.connector.j
+    api libs.org.jdbi.jdbi3.core
+    api libs.org.mindrot.jbcrypt
+    api libs.jakarta.mail.jakarta.mail.api
+    api libs.org.eclipse.angus.angus.mail
+    api libs.com.google.api.client.google.api.client
+    api libs.org.scribe.scribe
+    api libs.org.json.json
+    testImplementation libs.org.junit.jupiter.junit.jupiter.api
+    testImplementation libs.org.junit.jupiter.junit.jupiter.engine
+    compileOnly libs.jakarta.servlet.jakarta.servlet.api
+}
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+test {
+    useJUnitPlatform()
+}
+
+remotes {
+    host {
+        host = '192.168.140.128'
+        user = 'root'
+        password = 'centos'
+    }
+}
+
+ssh.settings {
+    knownHosts = allowAnyHosts
+}
+
+task docker_app_start {
+    doLast {
+        println 'begin docker_app_start'
+        ssh.run {
+            session(remotes.host) {
+                execute 'docker stop tomcat9', ignoreError: true
+                execute 'docker run -it --rm -d ' +
+                        '--name tomcat9 ' +
+                        '-v /usr/deploy:/usr/local/tomcat/webapps ' +
+                        '-p 80:8080 ' +
+                        'tomcat:9.0&'
+            }
+        }
+    }
+}
+
+task docker_upload_file_to_server {
+    doLast {
+        println 'begin docker_upload_file_to_server'
+        ssh.run {
+            session(remotes.host) {
+                execute 'rm -rf /usr/deploy/clock.war'
+                execute 'rm -rf /usr/deploy/clock/'
+                execute 'rm -rf /usr/deploy/clock/'
+                put from: "${project.projectDir}/build/libs/LTW_Project_Clock-1.0-SNAPSHOT.war",
+                        into: "/usr/deploy/clock.war"
+            }
+        }
+    }
+}
+
+task docker_deploy {
+    dependsOn docker_app_start
+    dependsOn docker_upload_file_to_server
+    dependsOn build
+    tasks.getByName('docker_app_start').mustRunAfter docker_upload_file_to_server
+}
