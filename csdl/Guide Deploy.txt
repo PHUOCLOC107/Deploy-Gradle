@@ -1,0 +1,27 @@
+1_ Cài đặt docker (Nếu là centos 7 thì đổi dnf -> yum): 
+
+			sudo dnf install -y dnf-utils device-mapper-persistent-data lvm2
+		
+			sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+			sudo dnf install -y docker-ce docker-ce-cli containerd.io 
+2_ Khởi động docker:
+			sudo systemctl start docker
+
+			sudo systemctl enable docker
+
+			sudo systemctl status docker
+				
+			docker run hello-world 
+
+3_ Tiến hàng deploy: 
+			mkdir -p /usr/deploy
+			chmod -R 777 /usr/deploy
+			ls -l /usr/deploy (Màu xanh dương là ok)
+
+
+4_ Cài đặt tomcat: 	sudo docker run -it --rm -d --name tomcat10 -v /usr/deploy:/usr/local/tomcat/webapps -p 80:8080 tomcat:10.0
+
+5_ Cài đặt mysql:	sudo docker run -it -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=12345 mysql:latest
+
+6_ Khởi động mysql: 	sudo docker start mysql
